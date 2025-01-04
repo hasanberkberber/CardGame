@@ -16,7 +16,9 @@ public class CardGame {
     Player currentPlayer;
 
     boolean gameOver;
-    boolean setOver;
+    boolean roundOver;
+    int numRoundsPlayed;
+    int numPlayersPlayedInRound;
 
     private JFrame frame;
     private JLabel[] player1Labels, player2Labels, deskLabels;
@@ -29,6 +31,7 @@ public class CardGame {
     private JCheckBox[] player2CardCheckboxes;
     private JButton player1ChangeButton;
     private JButton player2ChangeButton;
+    private JButton nextRoundButton;
 
     private static final int USER_DECK_SIZE = 5;
     private static final int DESK_DECK_SIZE = 3;
@@ -92,6 +95,7 @@ public class CardGame {
                 cards.add(new Card(rank, suit)); // Add the card to the list
             }
         }
+        Collections.shuffle(cards);
         return cards;
     }
 
@@ -134,14 +138,14 @@ public class CardGame {
     }
 
 
-    public static int calculatePoints(List<Card> deck) {
+    public static void calculatePoints(Player player) {
+        List<Card> deck = player.hand;
         int step1 = Calculation.handleKinds(deck);
         int step2 = Calculation.handleStraights(deck);
         int step3 = Calculation.handleSuits(deck);
 
         int totalPoints = step1 + step2 + step3;
-        return totalPoints;
-
+        player.points = totalPoints;
     }
 
     public void handleChange() {
@@ -163,16 +167,53 @@ public class CardGame {
             }
         }
 
-        currentPlayer.points = calculatePoints(currentPlayer.hand);
+        calculatePoints(currentPlayer);
         showCardImagesPlayer(currentPlayer);
         switchPlayerTurn();
-        currentPlayer.points = calculatePoints(currentPlayer.hand);
+        calculatePoints(currentPlayer);
         showCardImagesPlayer(currentPlayer);
 
 //        if (currentPlayer == )
-//        TODO: Burada kaldik.
+//        TODO: Burayı arat
+        numPlayersPlayedInRound++;
+        checkGameOver();
+        if (numPlayersPlayedInRound == 2) {
+            showCardImagesDesk();
+            updatePlayerDeckWithDeskCards();
+            updateWins();
+            switchPlayerTurn();
+            numRoundsPlayed++;
+            nextRoundButton.setEnabled(true);
+            player1ChangeButton.setEnabled(false);
+            player2ChangeButton.setEnabled(false);
+
+        }
 
         updateUI();
+    }
+
+    public void updatePlayerDeckWithDeskCards() {
+        System.out.println("9999999999999999Updating Player Deck to 8");
+        for (Card card : deskCards) {
+            player1.hand.add(card);
+            player2.hand.add(card);
+        }
+        System.out.println("player 1 hand size" + player1.hand.size());
+        System.out.println("player 2 hand size" + player2.hand.size());
+        calculatePoints(player1);
+        calculatePoints(player2);
+    }
+
+    public void updateWins() {
+        System.out.println("updateWins");
+        System.out.println("player 1 hand size" + player1.hand.size());
+        System.out.println("player 2 hand size" + player2.hand.size());
+        if(player1.points > player2.points) {
+            player1.wins++;
+        } else if (player2.points > player1.points) {
+            player2.wins++;
+        }
+        setPlayerWinsLabelTexts();
     }
 
     public void setupGUI() {
@@ -195,7 +236,7 @@ public class CardGame {
         int spacing = 100; // Space between checkboxes
 
         // Load the image icon
-        ImageIcon cardImage = new ImageIcon("C:\\Users\\Berk\\IdeaProjects\\CardGame\\src\\MyCard\\test_card.jpeg");
+        ImageIcon cardImage = new ImageIcon("images\\back_dark.png");
 
         // Setup Player 1 GUI components
         for (int i = 0; i < 5; i++) {
@@ -300,8 +341,46 @@ public class CardGame {
         debugButton.addActionListener(e -> printStateButton());
         frame.add(debugButton);
 
+        nextRoundButton = new JButton("Next Round");
+        nextRoundButton.setBounds(600, 300, 100, 30);
+        nextRoundButton.setFont(new Font("Arial", Font.BOLD, 14));
+        nextRoundButton.addActionListener(e -> advanceToNextRound());
+        frame.add(nextRoundButton);
+        nextRoundButton.setEnabled(false);
+
 
         frame.setVisible(true);
+
+    }
+
+    public void checkGameOver() {
+        String winner;
+        if (player1.wins == 3){
+            winner = "PLAYER 1";
+        } else if (player2.wins == 3){
+            winner = "PLAYER 2";
+        }
+        else {
+            winner = null;
+        }
+        if (winner != null) {
+            gameOver = true;
+            currentPlayerText.setText("GAME OVER " + winner + " WINS");
+        }
+    }
+
+    public void advanceToNextRound(){
+
+        if (gameOver) {
+            System.out.println("Game Over");
+            player1ChangeButton.setEnabled(false);
+            player2ChangeButton.setEnabled(false);
+            nextRoundButton.setEnabled(false);
+        } else {
+            System.out.println("1111111111111Advance to next round");
+            startRound(currentPlayer);
+        }
+
 
     }
 
@@ -310,8 +389,10 @@ public class CardGame {
 //        player2.points = calculatePoints(player2.hand);
 
         System.out.println("======= CURRENT STATE =======");
+        System.out.println("numPlayersPlayedInRound: " + numPlayersPlayedInRound);
+        System.out.println("numRoundsPlayed: " + numRoundsPlayed);
         System.out.println("gameOver: " + gameOver);
-        System.out.println("setOver: " + setOver);
+        System.out.println("setOver: " + roundOver);
         System.out.println("Current Player: " + currentPlayer);
         System.out.println("\nPlayer 1");
         System.out.println("------");
@@ -340,7 +421,7 @@ public class CardGame {
         System.out.println("Player 2 points: " + player2.points);
     }
 
-    public int howManyCardsToRedraw(JCheckBox[] checkBoxes) {
+    public int howManyCardsToRedrew(JCheckBox[] checkBoxes) {
         int count = 0; // Counter for checked boxes
         for (JCheckBox checkBox : checkBoxes) {
             if (checkBox.isSelected()) { // Check if the checkbox is selected
@@ -359,15 +440,6 @@ public class CardGame {
             }
         }
     }
-
-//    public void showCardImagesDesk() {
-//        // displays the desk cards.
-//        System.out.println("Displaying Desk Cards.");
-//        for (int i = 0; i < 3; i++) {
-//            String imagePath = deskCards.get(i).getImagePath();
-//            deskLabels[i].setIcon(new ImageIcon(imagePath));
-//        }
-//    }
 
     public void showCardImagesDesk() {
         // Displays the desk cards
@@ -389,8 +461,10 @@ public class CardGame {
         JLabel[] imageLabels;
         if (player == player1) {
             imageLabels = player1Labels;
-        } else {
+        } else if (player == player2) {
             imageLabels = player2Labels;
+        } else {
+            throw new RuntimeException();
         }
 
         for (int i = 0; i < 5; i++) {
@@ -407,17 +481,57 @@ public class CardGame {
         }
     }
 
+
+    public void hideCardImagesDesk() {
+        JLabel[] imageLabels = deskLabels;
+
+        for (int i = 0; i < 3; i++) {
+            // Get the image path from the player's hand
+            String imagePath = "images\\back_dark.png";
+            // Load and resize the image
+            ImageIcon originalIcon = new ImageIcon(imagePath);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(80, 100, Image.SCALE_SMOOTH);
+            ImageIcon resizedIcon = new ImageIcon(scaledImage);
+
+            // Set the resized image to the label
+            imageLabels[i].setIcon(resizedIcon);
+        }
+    }
+
+    public void hideCardImagesPlayer(Player player) {
+        JLabel[] imageLabels;
+        if (player == player1) {
+            imageLabels = player1Labels;
+        } else if (player == player2) {
+            imageLabels = player2Labels;
+        } else {
+            throw new RuntimeException();
+        }
+
+        for (int i = 0; i < 5; i++) {
+            // Get the image path from the player's hand
+            String imagePath = "images\\back_dark.png";
+            // Load and resize the image
+            ImageIcon originalIcon = new ImageIcon(imagePath);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(80, 100, Image.SCALE_SMOOTH);
+            ImageIcon resizedIcon = new ImageIcon(scaledImage);
+
+            // Set the resized image to the label
+            imageLabels[i].setIcon(resizedIcon);
+        }
+    }
+
     public void updateUI() {
 
         int numCards;
         if (currentPlayer == player1) {
             // how many true values in this list: player1CardCheckboxes
-            numCards = howManyCardsToRedraw(player1CardCheckboxes);
+            numCards = howManyCardsToRedrew(player1CardCheckboxes);
             List<Card> newCards = distributeCards(deck, numCards);
             replaceCards(player1, newCards, player1CardCheckboxes);
         } else {
             // how many true values for this array: player2CardCheckboxes
-            numCards = howManyCardsToRedraw(player2CardCheckboxes);
+            numCards = howManyCardsToRedrew(player2CardCheckboxes);
             List<Card> newCards = distributeCards(deck, numCards);
             replaceCards(player2, newCards, player2CardCheckboxes);
         }
@@ -427,7 +541,7 @@ public class CardGame {
             player2CardCheckboxes[i].setSelected(false);
         }
 
-        if (setOver) {
+        if (roundOver) {
             currentPlayerText.setText("SET OVER");
             player1ChangeButton.setEnabled(false);
             player2ChangeButton.setEnabled(false);
@@ -437,12 +551,19 @@ public class CardGame {
         player1PointsLabel.setText(String.valueOf(player1.points));
         player2PointsLabel.setText(String.valueOf(player2.points));
 
-        if (currentPlayer == player1) {
-            player2ChangeButton.setEnabled(false);
+        if (!nextRoundButton.isEnabled()) {
+            if (currentPlayer == player1) {
+                player2ChangeButton.setEnabled(false);
+                player1ChangeButton.setEnabled(true);
+            }
+            else if (currentPlayer == player2) {
+                player1ChangeButton.setEnabled(false);
+                player2ChangeButton.setEnabled(true);
+            }
+
         }
-        else if (currentPlayer == player2) {
-            player1ChangeButton.setEnabled(false);
-        }
+
+
 
     }
 
@@ -450,27 +571,58 @@ public class CardGame {
         if (currentPlayer == player1) {
             currentPlayer = player2;
         } else {
-            // currentPlayer = player1;
-            System.out.println("Switched Player for game over");
-            setOver = true;
-            showCardImagesDesk();
+            currentPlayer = player1;
         }
         System.out.println("switched to next player");
     }
 
-    public void startSet(Player player) {
-        this.gameOver = false;
-        this.deck = prepareCards();
+    public void setPlayerPointsLabelText(Player player) {
+        if (player == player1) {
+            player1PointsLabel.setText(String.valueOf(player1.points));
+        } else if (player == player2) {
+            player2PointsLabel.setText(String.valueOf(player2.points));
+        }
+    }
+
+    public void setPlayerWinsLabelTexts() {
+        player1winsText.setText("Player 1 Wins:" + player1.wins);
+        player2winsText.setText("Player 2 Wins:" + player2.wins);
+
+    }
+
+    public void startRound(Player player) {
+
+        this.roundOver = false;
+        this.numPlayersPlayedInRound = 0;
+        this.player1.points = 0;
+        this.player2.points = 0;
 
         // Initialize decks.
+        this.deck = prepareCards();
         this.player1.hand = distributeCardsPlayer(this.deck);
         this.player2.hand = distributeCardsPlayer(this.deck);
         this.deskCards = distributeCardsDesk(this.deck);
+
+        hideCardImagesPlayer(player1);
+        hideCardImagesPlayer(player2);
+        hideCardImagesDesk();
+        nextRoundButton.setEnabled(false);
+
+        calculatePoints(player);
+        showCardImagesPlayer(player);
+        setPlayerPointsLabelText(player);
+//        setPlayerWinsLabelTexts();
         updateUI();
+
+
+
     }
 
 
     public CardGame() {
+        this.numPlayersPlayedInRound = 0;
+        this.roundOver = false;
+        this.gameOver = false;
         this.player1 = new Player(1);
         this.player2 = new Player(2);
 
@@ -478,11 +630,16 @@ public class CardGame {
         System.out.println("Current Player is Player " + currentPlayer);
         setupGUI();
 
-        startSet(currentPlayer);
-        currentPlayer.points = calculatePoints(currentPlayer.hand);
-        showCardImagesPlayer(currentPlayer);
-        player1PointsLabel.setText(String.valueOf(player1.points));
+        startRound(currentPlayer);
         updateUI();
+
+//        updateUI();
+
+//        System.out.println("Switched Player for game over");
+//        setOver = true;
+//        showCardImagesDesk();
+
+
 //
 //        while (!gameOver) {
 //            startSet(currentPlayer);
