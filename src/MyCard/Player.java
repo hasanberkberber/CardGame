@@ -1,12 +1,12 @@
 package MyCard;
 
 import java.util.List;
-
+//player representation
 class Player {
-    int playerNum;
-    List<Card> hand;
-    int wins;
-    int points;
+    int playerNum; // player id
+    List<Card> hand; // player deck of cards
+    int wins; //number of wins
+    int points; //points for players
 
     public Player(int playerNum) {
         this.playerNum = playerNum;
@@ -14,11 +14,6 @@ class Player {
         this.wins = 0;
         this.points = 0;
     }
-
-    public void setHand(List<Card> deck) {
-        this.hand = deck;
-    }
-
     @Override
     public String toString() {
         return "Player " + playerNum + ": (hand: " + hand + ")";

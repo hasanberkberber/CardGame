@@ -11,7 +11,7 @@ import static MyCard.CardGame.sortCardsByValue;
 public class Calculation {
 
     final static int STRAIGHT_SIZE = 5;
-
+//returns the total value of given deck
     public static int sumValues(List<Card> cards) {
         int sum = 0;
         for (Card card : cards) {
@@ -19,18 +19,22 @@ public class Calculation {
         }
         return sum;
     }
-
+//handles the suit case
     public static int handleSuits(List<Card> deck) {
-
+        // a dictionary that mapes a suit to its kind cards
+        // example :
+        // <Heart: [card1,card3,card4....]>
+        // <Spade>: [card2,card5,card6....]>
         Map<String, List<Card>> suitCardsMapping = new HashMap<>();
 
         for (Card card : deck) {
             // If the suit doesn't exist in the map, add it with an empty list
             suitCardsMapping.putIfAbsent(card.suit, new ArrayList<>());
 
-            // Add the card to the list corresponding to the suit
+            // Then we will add the current card into this list corresponding this suit
             suitCardsMapping.get(card.suit).add(card);
-        }
+        }//we finish the populating the maping
+        //note that the maping containg for keys which are four kinds of suit
 
         int totalPoints = 0;
 //        System.out.println("Printing the dictionary:");
@@ -40,16 +44,16 @@ public class Calculation {
             if (suitCards.size() >= 5) {
                 System.out.println("Handle Suits found: " + entry.getKey() + " " + entry.getValue());
                 totalPoints += sumValues(suitCards) * 6;
-                // We will need to exclude them once, as we alreadu counted them
+                // We will need to exclude them once, as we already counted them
                 totalPoints -= sumValues(suitCards);
             }
         }
 
         return totalPoints;
     }
-
+//handles straights
     public static int handleStraights(List<Card> deck) {
-
+//this is for double checking if the size is valid
         if (deck.size() > (STRAIGHT_SIZE * 2)) {
             throw new RuntimeException("Size greater than 10");
         }
@@ -89,7 +93,7 @@ public class Calculation {
 
         return totalPoints;
     }
-
+//handling kinds
     public static int handleKinds(List<Card> deck) {
         /*
         We will always count the value, even if they are occuring only once.
@@ -97,6 +101,7 @@ public class Calculation {
         rankCounts = { 9: 2, A: 1 }
         9 + 9 + 14 = 32
          */
+        // dictionary for storing each ranks count
         Map<String, Integer> rankCounts = new HashMap<>();
 
         for (Card card : deck) {
